@@ -21,18 +21,34 @@ class DefaultLocaleMiddleware(object):
     specifically django.middleware.locale.LocaleMiddleware
     """
 
+    def is_feature_enabled(self):
+        """
+        Check if the feature is enabled for the Site or for the platform as a whole.
+        """
+        is_enabled = configuration_helpers.get_value(
+            'ENABLE_LINGOX', settings.FEATURES.get('ENABLE_LINGOX', False)
+        )
+
+        return is_enabled
+
+    def patch_request(self, request):
+        """
+        Enforce LANGUAGE_CODE regardless of the browser provided language.
+
+        Django will use this value in the LocaleMiddleware to display the desired language.
+        """
+        if 'HTTP_ACCEPT_LANGUAGE' in request.META:
+            # Preserve the browser provided language just in case,
+            # the underscore prefix means that you probably shouldn't be using it anyway
+            request.META['_HTTP_ACCEPT_LANGUAGE'] = request.META['HTTP_ACCEPT_LANGUAGE']
+
+        language_code = configuration_helpers.get_value('LANGUAGE_CODE', settings.LANGUAGE_CODE)
+        request.META['HTTP_ACCEPT_LANGUAGE'] = language_code
+
     def process_request(self, request):
         """
         Change the request's `HTTP_ACCEPT_LANGUAGE` to `settings.LANGUAGE_CODE`.
         """
         # This middleware is only needed for regular browser pages. It is incompatible with the mobile apps.
-        if not is_api_request(request):
-            if 'HTTP_ACCEPT_LANGUAGE' in request.META:
-                # Preserve the browser provided language just in case,
-                # the underscore prefix means that you probably shouldn't be using it anyway
-                request.META['_HTTP_ACCEPT_LANGUAGE'] = request.META['HTTP_ACCEPT_LANGUAGE']
-
-            # Enforce LANGUAGE_CODE regardless of the browser provided language
-            # Django will use this value in the LocaleMiddleware to display the desired language
-            language_code = configuration_helpers.get_value('LANGUAGE_CODE', settings.LANGUAGE_CODE)
-            request.META['HTTP_ACCEPT_LANGUAGE'] = language_code
+        if self.is_feature_enabled() and not is_api_request(request):
+            self.patch_request(request)
