@@ -49,7 +49,7 @@ Next, install LingoX and configure it:
 
 - ``$ pip install -e git+https://github.com/appsembler/LingoX.git#egg=lingox``
 - Add ``lingox`` to ``ADDL_INSTALLED_APPS`` in the ``lms.env.json`` (or your ``server-vars.yml``)
-- Add ``ENABLE_LINGOX`` to ``FEATURES`` in the ``lms.env.json`` (or your ``server-vars.yml``)
+- Set ``FEATURES['ENABLE_LINGOX']`` to ``true`` in the ``lms.env.json`` (or your ``server-vars.yml``)
 - Set ``LANGUAGE_CODE`` to ``ar``
 - Reload the server
 - Open a new incognito window on ``http://localhost:8000/``, you should see an Arabic interface

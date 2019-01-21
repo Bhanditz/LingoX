@@ -5,7 +5,7 @@ from __future__ import absolute_import, unicode_literals
 
 from django.conf import settings
 
-from lingox.helpers import is_api_request
+from lingox.helpers import is_api_request, is_feature_enabled
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 
 
@@ -20,16 +20,6 @@ class DefaultLocaleMiddleware(object):
     Should be installed *before* any middleware that checks request.META['HTTP_ACCEPT_LANGUAGE'],
     specifically django.middleware.locale.LocaleMiddleware
     """
-
-    def is_feature_enabled(self):
-        """
-        Check if the feature is enabled for the Site or for the platform as a whole.
-        """
-        is_enabled = configuration_helpers.get_value(
-            'ENABLE_LINGOX', settings.FEATURES.get('ENABLE_LINGOX', False)
-        )
-
-        return is_enabled
 
     def patch_request(self, request):
         """
@@ -49,6 +39,7 @@ class DefaultLocaleMiddleware(object):
         """
         Change the request's `HTTP_ACCEPT_LANGUAGE` to `settings.LANGUAGE_CODE`.
         """
-        # This middleware is only needed for regular browser pages. It is incompatible with the mobile apps.
-        if self.is_feature_enabled() and not is_api_request(request):
+        # This middleware is only needed for regular browser pages.
+        # It is incompatible with the mobile apps and APIs in general.
+        if is_feature_enabled() and not is_api_request(request):
             self.patch_request(request)
